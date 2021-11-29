@@ -11,8 +11,10 @@
         <div class="row m-0">
             <div class="col-lg-4 left-side-product-box pb-3">
                 @if(isset($book['images']['cover']) && !empty($book['images']['cover']))
-                    <img
-                        src="{{ 'https://api.packt.com/api/v1/products/'.$book['id'].'/cover/small?token='.config('packt.api_key') }}">
+                    <a href="{{ $book['url'] }}">
+                        <img
+                            src="{{ 'https://api.packt.com/api/v1/products/'.$book['id'].'/cover/small?token='.config('packt.api_key') }}">
+                    </a>
                 @endif
                 <span class="sub-img">
                     <div class="col-lg-12">
@@ -46,7 +48,7 @@
                             @else
                                 <span>{{ $book['isbn'] }}</span> <br>
                             @endif
-                            <p class="m-0 p-0">{{ $book['title'] }}</p>
+                            <p class="m-0 p-0"><a href="{{ $book['url'] }}">{{ $book['title'] }}</a></p>
                             <span><strong>Product type: </strong>{{ $book['product_type'] }}</span><br>
                             @if(isset($book['tagline']) && !empty($book['tagline']))
                                 <i>{{ $book['tagline'] }}</i><br>

@@ -53,10 +53,8 @@ class HomeController extends Controller
      */
     public function find(Request $request
     ): \Illuminate\Contracts\View\View|\Illuminate\Contracts\View\Factory|\Illuminate\Contracts\Foundation\Application {
-        $searchQuery = $request->get('search');
-
         return view('books')->with([
-            'books'  => PacktAPI::search($searchQuery) ?? null,
+            'books'  => PacktAPI::search($request->get('search')) ?? null,
             'search' => true,
         ]);
     }

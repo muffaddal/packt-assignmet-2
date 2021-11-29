@@ -23,9 +23,11 @@
         @if(!is_null($books))
             @foreach($books as $book)
                 <div class="card" style="width: 22rem; margin-bottom: 15px; margin-top: 10px; margin-left: 10px">
-                    <img class="card-img-top"
-                         src="{{ 'https://api.packt.com/api/v1/products/'.$book['id'].'/cover/large?token='.config('packt.api_key') }}"
-                         alt="Card image cap">
+                    <a href="{{ route('get_product', ['id' => $book['id'] ]) }}">
+                        <img class="card-img-top"
+                             src="{{ 'https://api.packt.com/api/v1/products/'.$book['id'].'/cover/large?token='.config('packt.api_key') }}"
+                             alt="Card image cap">
+                    </a>
                     <div class="card-body">
                         <h5 class="card-title">{{ $book['title'] }}</h5>
                         <p class="card-text">
