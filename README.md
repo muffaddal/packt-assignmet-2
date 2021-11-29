@@ -8,6 +8,8 @@ How to use :
 
 Clone the repo in your local machine from github.
 
+copy the .env.sample to .env
+
 Run the following command: 
 
 ```./vendor/bin/sail up```
