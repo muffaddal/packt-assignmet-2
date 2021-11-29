@@ -3,7 +3,6 @@
 namespace App\Classes;
 
 use GuzzleHttp\Client;
-use Illuminate\Http\Response;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
 
