@@ -27,3 +27,5 @@ On clicking any tile or the read more button at the bottom of the card, you will
 ![packt-4](https://user-images.githubusercontent.com/5665522/143896331-4835a518-0ad3-4b46-bed7-38624e3bdb7b.png)
 
 Below there are two buttons - Access from Packt Website which will redirect to the Packt Website for that Particular book, and Back to listings page which will redirect to the Main Listings page.
+
+Caching Mechanism with the Redis, which comes out of the box with Sail has been implemented. Subsequent Requests will be much faster, then the pervious ones.
