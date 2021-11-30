@@ -1,15 +1,29 @@
 @extends('layouts.app')
 
 @section('content')
-    <nav class="navbar navbar-light">
-        <form class="form-inline" action="{{ route('find') }}" method="GET">
-            <input class="form-control mr-sm-2" type="search" placeholder="Search" aria-label="Search" name="search"
-                   autocomplete="off" required="required" value="{{ old('search') }}">
-            <button class="btn btn-outline-success my-2 my-sm-0" type="submit">Search</button>
-        </form>
-        @if(isset($search) && $search)
-            <a href="{{ route('main_listing') }}">Go back to Main listing</a>
-        @endif
+    <nav class="navbar navbar-expand-lg navbar-light">
+        <a class="navbar-brand" href="{{ route('main_listing') }}"><img src="{{ url('images/packt_logo.png') }}" alt="Not found"></a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent"
+                aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="collapse navbar-collapse" id="navbarSupportedContent">
+            <ul class="navbar-nav mr-auto">
+                @if(isset($search) && $search)
+                    <li class="nav-item">
+                        <a class="btn btn-outline-success my-2 my-sm-0" href="{{ route('main_listing') }}">Go back to
+                            Main listing</a>
+                    </li>
+                @endif
+            </ul>
+            <form class="form-inline" action="{{ route('find') }}" method="GET">
+                <input class="form-control mr-sm-2" type="search" placeholder="Search" aria-label="Search" name="search"
+                       autocomplete="off" required="required" value="{{ old('search') }}">
+                <button class="btn btn-outline-success my-2 my-sm-0" type="submit">Search</button>
+            </form>
+            <br>
+        </div>
     </nav>
     <div class="row">
         @if($books instanceof \Illuminate\Pagination\LengthAwarePaginator && $books->isEmpty() || is_array($books) && empty($books))
