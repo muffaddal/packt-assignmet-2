@@ -2,10 +2,9 @@
 
 @section('content')
     <nav class="navbar navbar-light">
-        <form class="form-inline" action="{{ route('find') }}" method="POST">
-            {!! csrf_field() !!}
+        <form class="form-inline" action="{{ route('find') }}" method="GET">
             <input class="form-control mr-sm-2" type="search" placeholder="Search" aria-label="Search" name="search"
-                   autocomplete="off" required="required">
+                   autocomplete="off" required="required" value="{{ old('search') }}">
             <button class="btn btn-outline-success my-2 my-sm-0" type="submit">Search</button>
         </form>
         @if(isset($search) && $search)
@@ -13,7 +12,7 @@
         @endif
     </nav>
     <div class="row">
-        @if($books->isEmpty())
+        @if($books instanceof \Illuminate\Pagination\LengthAwarePaginator && $books->isEmpty() || is_array($books) && empty($books))
             <div style="position: fixed;top: 50%;left: 50%;transform: translate(-50%, -50%);">
                 <img src="{{ url('images/404.jpg') }}" alt="Not found"><br>
                 <a href="{{ route('main_listing') }}">Go back to Main listing</a>
@@ -78,5 +77,7 @@
             @endforeach
         @endif
     </div>
-    {!! $books->links() !!}
+    @if($books instanceof \Illuminate\Pagination\LengthAwarePaginator)
+        {!! $books->links() !!}
+    @endif
 @endsection

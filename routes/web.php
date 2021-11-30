@@ -20,6 +20,6 @@ Route::get('/product/{id}', [
     'uses' => 'HomeController@get'
 ])->name('get_product');
 
-Route::post('/search', [
+Route::get('/search', [
     'uses' => 'HomeController@find'
 ])->name('find');

@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Collection;
 use PacktAPI;
 
 class HomeController extends Controller
@@ -15,35 +17,23 @@ class HomeController extends Controller
      */
     public function index(Request $request)
     {
-
-        $data = $this->checkIfValidResponseOrThrowException(
-            PacktAPI::getAllBooks(
-                $request->has('limit') ? $request->get('limit') : 0
-            )
-        );
-
-        if (isset($data[ 'products' ]) && !empty($data[ 'products' ])) {
-            return view('books')->with([
-                'books' => PacktAPI::paginate($data[ 'products' ]) ?? null,
-            ]);
-        }
-
-        throw new \Exception("No Products Found.");
+        return view('books')->with([
+            'books' => $this->paginate(
+                    PacktAPI::getAllBooks(
+                        $request->has('limit') ? $request->get('limit') : 0)
+                ) ?? null,
+        ]);
     }
 
     /**
      * @param $id
-     * @return \Illuminate\Contracts\View\View|\Illuminate\Contracts\View\Factory|\Illuminate\Contracts\Foundation\Application
-     * @throws \Exception
+     * @return \Illuminate\Contracts\Foundation\Application|\Illuminate\Contracts\View\Factory|\Illuminate\Contracts\View\View
      */
-    public function get($id
-    ): \Illuminate\Contracts\View\View|\Illuminate\Contracts\View\Factory|\Illuminate\Contracts\Foundation\Application {
-        $book = $this->checkIfValidResponseOrThrowException(PacktAPI::getBook($id));
-        $pricing = $this->checkIfValidResponseOrThrowException(PacktAPI::getBookPrice($id, env('CURRENCY', 'GBP')));
-
+    public function get($id)
+    {
         return view('book_details')->with([
-            'book'    => $book,
-            'pricing' => $pricing,
+            'book'    => PacktAPI::getBook($id),
+            'pricing' => PacktAPI::getBookPrice($id, env('CURRENCY', 'GBP')),
         ]);
     }
 
@@ -51,8 +41,8 @@ class HomeController extends Controller
      * @param Request $request
      * @return \Illuminate\Contracts\Foundation\Application|\Illuminate\Contracts\View\Factory|\Illuminate\Contracts\View\View
      */
-    public function find(Request $request
-    ): \Illuminate\Contracts\View\View|\Illuminate\Contracts\View\Factory|\Illuminate\Contracts\Foundation\Application {
+    public function find(Request $request)
+    {
         return view('books')->with([
             'books'  => PacktAPI::search($request->get('search')) ?? null,
             'search' => true,
@@ -60,12 +50,17 @@ class HomeController extends Controller
     }
 
     /**
-     * @param $data
-     * @return mixed
-     * @throws \Exception
+     * @param       $items
+     * @param null  $page
+     * @param array $options
+     * @return LengthAwarePaginator
      */
-    private function checkIfValidResponseOrThrowException($data): mixed
+    private function paginate($items, $page = null, array $options = []): LengthAwarePaginator
     {
-        return is_string($data) ? throw new \Exception($data) : $data->response;
+        $perPage = config('packt.perPage');
+        $page = $page ?: (LengthAwarePaginator::resolveCurrentPage() ?: 1);
+        $items = $items instanceof Collection ? $items : Collection::make($items);
+
+        return new LengthAwarePaginator($items->forPage($page, $perPage), $items->count(), $perPage, $page, $options);
     }
 }

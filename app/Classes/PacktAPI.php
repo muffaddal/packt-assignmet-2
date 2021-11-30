@@ -3,8 +3,7 @@
 namespace App\Classes;
 
 use GuzzleHttp\Client;
-use Illuminate\Pagination\LengthAwarePaginator;
-use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Cache;
 
 class PacktAPI
 {
@@ -13,32 +12,45 @@ class PacktAPI
 
     const BASE_URL = 'https://api.packt.com';
 
+    public array $queryParams = [];
+
     /**
      * @var null
      */
     public $response = null;
 
-    /**
+    public function __construct()
+    {
+        $this->setQueryParams([
+            'token' => config('packt.api_key'),
+        ]);
+    }
+
+    /***
      * @param int $limit
-     * @return $this|string
+     * @return mixed
      */
-    public function getAllBooks(int $limit = 0)
+    public function getAllBooks(int $limit = 0): mixed
     {
         try {
-            $data = $this->httpClient()->request('get', self::PRODUCTS_ENDPOINT, [
-                'query' => [
-                    'token' => config('packt.api_key'),
-                    'limit' => $limit ?: "",
-                ]
-            ]);
 
-            if ($data->getStatusCode() !== 200) {
-                throw new \Exception("Problem with API, Please try again.");
+            if ($limit > 0) {
+                $this->queryParams[ 'limit' ] = $limit;
             }
 
-            $this->response = json_decode($data->getBody(), true);
+            if (Cache::has("books") && !$limit > 0) {
+                return Cache::get("books");
+            }
 
-            return $this;
+            $data = $this->checkIfValidResponseOrThrowException(
+                $this->apiRequest(self::PRODUCTS_ENDPOINT, 'get')
+            );
+
+            if (isset($data[ 'products' ]) && !empty($data[ 'products' ])) {
+                Cache::put('books', $data[ 'products' ]);
+
+                return $data[ 'products' ];
+            }
         } catch (\Throwable $e) {
             return $e->getMessage();
         }
@@ -46,24 +58,22 @@ class PacktAPI
 
     /**
      * @param $id
-     * @return $this|string
+     * @return mixed
      */
-    public function getBook($id)
+    public function getBook($id): mixed
     {
         try {
-            $data = $this->httpClient()->request('get', self::PRODUCTS_ENDPOINT . "/" . $id, [
-                'query' => [
-                    'token' => config('packt.api_key'),
-                ]
-            ]);
-
-            if ($data->getStatusCode() !== 200) {
-                throw new \Exception("Problem with API, Please try again.");
+            if (Cache::has($id . "-book")) {
+                return Cache::get($id . "-book");
             }
 
-            $this->response = json_decode($data->getBody(), true);
+            $data = $this->checkIfValidResponseOrThrowException(
+                $this->apiRequest(self::PRODUCTS_ENDPOINT . "/" . $id, 'get')
+            );
 
-            return $this;
+            Cache::put($id . "-book", $data);
+
+            return $data;
         } catch (\Throwable $e) {
             return $e->getMessage();
         }
@@ -72,9 +82,9 @@ class PacktAPI
     /**
      * @param        $id
      * @param string $currencyCode
-     * @return $this|string
+     * @return mixed
      */
-    public function getBookPrice($id, string $currencyCode = 'GBP')
+    public function getBookPrice($id, string $currencyCode = 'GBP'): mixed
     {
         try {
 
@@ -82,20 +92,17 @@ class PacktAPI
                 throw new \Exception("Problem with API, Unaccepted Currency");
             }
 
-            $data = $this->httpClient()->request('get', self::PRODUCTS_ENDPOINT . "/" . $id . "/price/" . $currencyCode,
-                [
-                    'query' => [
-                        'token' => config('packt.api_key'),
-                    ]
-                ]);
-
-            if ($data->getStatusCode() !== 200) {
-                throw new \Exception("Problem with API, Please try again.");
+            if (Cache::has($id . "-pricing-" . $currencyCode)) {
+                return Cache::get($id . "-pricing-" . $currencyCode);
             }
 
-            $this->response = json_decode($data->getBody(), true);
+            $data = $this->checkIfValidResponseOrThrowException(
+                $this->apiRequest(self::PRODUCTS_ENDPOINT . "/" . $id . "/price/" . $currencyCode, 'get')
+            );
 
-            return $this;
+            Cache::put($id . "-pricing-" . $currencyCode, $data);
+
+            return $data;
         } catch (\Throwable $e) {
             return $e->getMessage();
         }
@@ -104,7 +111,7 @@ class PacktAPI
     /**
      * @return Client
      */
-    protected function httpClient()
+    protected function httpClient(): Client
     {
         return new Client([
             'base_uri' => self::BASE_URL,
@@ -112,36 +119,54 @@ class PacktAPI
     }
 
     /**
-     * @param       $items
-     * @param null  $page
-     * @param array $options
-     * @return LengthAwarePaginator
+     * @param $searchQuery
+     * @return array
      */
-    public function paginate($items, $page = null, array $options = []): LengthAwarePaginator
+    public function search($searchQuery): array
     {
-        $perPage = config('packt.perPage');
-        $page = $page ?: (LengthAwarePaginator::resolveCurrentPage() ?: 1);
-        $items = $items instanceof Collection ? $items : Collection::make($items);
-
-        return new LengthAwarePaginator($items->forPage($page, $perPage), $items->count(), $perPage, $page, $options);
+        return collect($this->getAllBooks())->filter(function ($value) use ($searchQuery) {
+            return preg_match('/(' . strtolower($searchQuery) . ')/', strtolower($value[ 'title' ]), $matches,
+                PREG_OFFSET_CAPTURE);
+        })->all();
     }
 
     /**
-     * @param $searchQuery
-     * @return LengthAwarePaginator|void
+     * @param        $url
+     * @param string $method
+     * @return PacktAPI
+     * @throws \GuzzleHttp\Exception\GuzzleException
      */
-    public function search($searchQuery)
+    private function apiRequest($url, string $method): PacktAPI
     {
-        $data = $this->getAllBooks()->response;
+        $request = $this->httpClient()->request($method, $url, [
+            'query' => $this->queryParams
+        ]);
 
-        if (isset($data[ 'products' ]) && !empty($data[ 'products' ])) {
-            $books = collect($data[ 'products' ]);
-            $filtered = $books->filter(function ($value) use ($searchQuery) {
-                return preg_match('/(' . strtolower($searchQuery) . ')/', strtolower($value[ 'title' ]), $matches,
-                    PREG_OFFSET_CAPTURE);
-            });
-
-            return $this->paginate($filtered->all());
+        if ($request->getStatusCode() !== 200) {
+            throw new \Exception("Problem with API, Please try again.");
         }
+
+        $this->response = json_decode($request->getBody(), true);
+
+        return $this;
+    }
+
+    /**
+     * @param $array
+     * @return void
+     */
+    private function setQueryParams($array): void
+    {
+        $this->queryParams = $array;
+    }
+
+    /**
+     * @param $data
+     * @return mixed
+     * @throws \Exception
+     */
+    private function checkIfValidResponseOrThrowException($data): mixed
+    {
+        return is_string($data) ? throw new \Exception($data) : $data->response;
     }
 }
