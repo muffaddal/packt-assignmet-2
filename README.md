@@ -12,9 +12,13 @@ copy the .env.sample to .env
 
 Run the following command: 
 
-```./vendor/bin/sail up```
+```./vendor/bin/sail up -d```
 
-This will start a docker env. Once everything is set up, head to http://localhost/ in the browser. It will display a catalogue of the books available. At a time we show 9 tiles which are paginated at the bottom. The / url can have a query string of limit which can be passed to limit the display of books.
+Once the Docker is up run the following command:
+
+```./vendor/bin/sail npm install && npm run dev```
+
+Once everything is set up, head to http://localhost/ in the browser. It will display a catalogue of the books available. At a time we show 9 tiles which are paginated at the bottom. The / url can have a query string of limit which can be passed to limit the display of books.
 
 ![packt-5](https://user-images.githubusercontent.com/5665522/144005874-5efb0148-d25c-4268-926d-236170280c0d.png)
 
