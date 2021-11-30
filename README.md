@@ -16,7 +16,7 @@ Run the following command:
 
 This will start a docker env. Once everything is set up, head to http://localhost/ in the browser. It will display a catalogue of the books available. At a time we show 9 tiles which are paginated at the bottom. The / url can have a query string of limit which can be passed to limit the display of books.
 
-![packt-2](https://user-images.githubusercontent.com/5665522/143895789-12270b76-9f89-4edd-8c74-834853bded58.png)
+![packt-5](https://user-images.githubusercontent.com/5665522/144005874-5efb0148-d25c-4268-926d-236170280c0d.png)
 
 On top there is a search option, which searches the books with respect to the title of the book, and returns the results.
 
